@@ -133,7 +133,7 @@ long_names = filter(lambda x: len(x.name)>=5, programmers)
 
 ## Then write code to cast the value of long_names to a list and save it in the variable long_names_list. 
 long_names_list = list(long_names)
-print(long_names_list)
+
 
 ## [PROBLEM 9]
 print("\n\n***** Problem 9 *****")
@@ -141,7 +141,7 @@ print("\n\n***** Problem 9 *****")
 # Use a list comprehension to generate a LIST of just the names of those Student instances whose name is longer than their seniority (i.e., ["Albert", "Mai", "Dinesh", "Euijin"]). Assign it to a variable called names_with_not_too_much_seniority.
 
 ## Note that you can use another list you have already created for this problem.
-
+names_with_not_too_much_seniority = [student.name for student in list(programmers) if len(student.name) > student.years_UM]
 
 
 
@@ -247,9 +247,9 @@ class Problem8(unittest.TestCase):
     def test_long_names_list2(self):
         self.assertEqual([x.name for x in long_names_list],["Albert","Dinesh","Euijin"])
 
-# class Problem9(unittest.TestCase):
-#     def test_names_without_much_seniority(self):
-#         self.assertEqual(names_with_not_too_much_seniority,['Albert', 'Mai', 'Dinesh', 'Euijin'])
+class Problem9(unittest.TestCase):
+    def test_names_without_much_seniority(self):
+        self.assertEqual(names_with_not_too_much_seniority,['Albert', 'Mai', 'Dinesh', 'Euijin'])
 
 # class Problem10(unittest.TestCase):
 #     def test_generator1(self):
