@@ -90,10 +90,10 @@ cur = conn.cursor()
 
 # Write code to drop the Tweets table if it exists, and create the table (so you can run the program over and over), with the correct (4) column names and appropriate types for each.
 # HINT: Remember that the time_posted column should be the TIMESTAMP data type!
-cur.execute('DROP TABLE IF EXISTS Tracks')
+cur.execute('DROP TABLE IF EXISTS Tweets')
 
 table_spec = 'CREATE TABLE IF NOT EXISTS '
-table_spec += 'Tweets (id INTEGER PRIMARY KEY, '
+table_spec += 'Tweets ('
 table_spec += 'tweet_id TEXT, author TEXT, time_posted TIMESTAMP, tweet_text TEXT, retweets INTEGER)'
 cur.execute(table_spec)
 
@@ -108,9 +108,9 @@ umsi_tweets = get_user_tweets("UMSI")
 # for tweets in umsi_tweets:
 # 	tweets_sql.append((None, tweets["id"],tweets[""]))
 
-statement = 'INSERT INTO Tweets VALUES (?,?,?,?,?,?)'
+statement = 'INSERT INTO Tweets VALUES (?,?,?,?,?)'
 for tweets in umsi_tweets:
-	cur.execute(statement, (None, tweets["id"], tweets["user"]["screen_name"], tweets["created_at"], tweets["text"], tweets["retweet_count"]))
+	cur.execute(statement, (tweets["id"], tweets["user"]["screen_name"], tweets["created_at"], tweets["text"], tweets["retweet_count"]))
 
 # Use the database connection to commit the changes to the database
 
@@ -127,18 +127,19 @@ conn.commit()
 
 
 # Select from the database all of the TIMES the tweets you collected were posted and fetch all the tuples that contain them in to the variable tweet_posted_times.
-
+cur.execute("SELECT time_posted FROM Tweets")
+tweet_posted_times = cur.fetchall()
 
 # Select all of the tweets (the full rows/tuples of information) that have been retweeted MORE than 2 times, and fetch them into the variable more_than_2_rts.
-
-
+cur.execute("SELECT * FROM Tweets WHERE retweets > 2")
+more_than_2_rts = cur.fetchall()
 
 # Select all of the TEXT values of the tweets that are retweets of another account (i.e. have "RT" at the beginning of the tweet text). Save the FIRST ONE from that group of text values in the variable first_rt. Note that first_rt should contain a single string value, not a tuple.
-
-
+cur.execute("SELECT tweet_text FROM Tweets WHERE instr(tweet_text, 'RT')")
+first_rt = cur.fetchone()[0]
 
 # Finally, done with database stuff for a bit: write a line of code to close the cursor to the database.
-
+conn.close()
 
 
 ## [PART 3] - Processing data
@@ -177,33 +178,33 @@ class PartOne(unittest.TestCase):
 		self.assertTrue("text" in umsi_tweets[6])
 		self.assertTrue("user" in umsi_tweets[4])
 
-# class PartTwo(unittest.TestCase):
-# 	def test1(self):
-# 		self.assertEqual(type(tweet_posted_times),type([]))
-# 		self.assertEqual(type(tweet_posted_times[2]),type(("hello",)))
-# 	def test2(self):
-# 		self.assertEqual(type(more_than_2_rts),type([]))
-# 		self.assertEqual(type(more_than_2_rts[0]),type(("hello",)))
-# 	def test3(self):
-# 		self.assertEqual(set([x[3][:2] for x in more_than_2_rts]),{"RT"})
-# 	def test4(self):
-# 		self.assertTrue("+0000" in tweet_posted_times[0][0])
-# 	def test5(self):
-# 		self.assertEqual(type(first_rt),type(""))
-# 	def test6(self):
-# 		self.assertEqual(first_rt[:2],"RT")
-# 	def test7(self):
-# 		self.assertTrue(set([x[-1] > 2 for x in more_than_2_rts]) in [{},{True}])
+class PartTwo(unittest.TestCase):
+	def test1(self):
+		self.assertEqual(type(tweet_posted_times),type([]))
+		self.assertEqual(type(tweet_posted_times[2]),type(("hello",)))
+	def test2(self):
+		self.assertEqual(type(more_than_2_rts),type([]))
+		self.assertEqual(type(more_than_2_rts[0]),type(("hello",)))
+	def test3(self):
+		self.assertEqual(set([x[3][:2] for x in more_than_2_rts]),{"RT"})
+	def test4(self):
+		self.assertTrue("+0000" in tweet_posted_times[0][0])
+	def test5(self):
+		self.assertEqual(type(first_rt),type(""))
+	def test6(self):
+		self.assertEqual(first_rt[:2],"RT")
+	def test7(self):
+		self.assertTrue(set([x[-1] > 2 for x in more_than_2_rts]) in [{},{True}])
 
-# class PartThree(unittest.TestCase):
-# 	def test1(self):
-# 		self.assertEqual(get_twitter_users("RT @umsi and @student3 are super fun"),{'umsi', 'student3'})
-# 	def test2(self):
-# 		self.assertEqual(get_twitter_users("the SI 206 people are all pretty cool"),set())
-# 	def test3(self):
-# 		self.assertEqual(get_twitter_users("@twitter_user_4, what did you think of the comment by @twitteruser5?"),{'twitter_user_4', 'twitteruser5'})
-# 	def test4(self):
-# 		self.assertEqual(get_twitter_users("hey @umich, @aadl is pretty great, huh? @student1 @student2"),{'aadl', 'student2', 'student1', 'umich'})
+class PartThree(unittest.TestCase):
+	def test1(self):
+		self.assertEqual(get_twitter_users("RT @umsi and @student3 are super fun"),{'umsi', 'student3'})
+	def test2(self):
+		self.assertEqual(get_twitter_users("the SI 206 people are all pretty cool"),set())
+	def test3(self):
+		self.assertEqual(get_twitter_users("@twitter_user_4, what did you think of the comment by @twitteruser5?"),{'twitter_user_4', 'twitteruser5'})
+	def test4(self):
+		self.assertEqual(get_twitter_users("hey @umich, @aadl is pretty great, huh? @student1 @student2"),{'aadl', 'student2', 'student1', 'umich'})
 
 
 if __name__ == "__main__":
