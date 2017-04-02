@@ -71,7 +71,6 @@ def get_user_tweets(userhandle):
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
 umich_tweets = get_user_tweets("umich")
 
-print(umich_tweets[0])
 
 ## Task 2 - Creating database and loading data into database
 
@@ -104,14 +103,42 @@ print(umich_tweets[0])
 ## HINT #2: You may want to go back to a structure we used in class this week to ensure that you reference the user correctly in each Tweet record.
 ## HINT #3: The users mentioned in each tweet are included in the tweet dictionary -- you don't need to do any manipulation of the Tweet text to find out which they are! Do some nested data investigation on a dictionary that represents 1 tweet to see it!
 
+conn = sqlite3.connect('project3_tweets.db')
+cur = conn.cursor()
 
+cur.execute('DROP TABLE IF EXISTS Tweets')
 
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+table_spec += 'Tweets (tweet_id string PRIMARY KEY, '
+table_spec += 'text TEXT, user_id TEXT, time_posted TIMESTAMP, retweets INTEGER)'
+cur.execute(table_spec)
 
+statement1 = 'INSERT INTO Tweets VALUES (?,?,?,?,?)'
+for tweets in umich_tweets:
+	cur.execute(statement1, (tweets["id_str"], tweets["text"], tweets["user"]["id_str"], tweets["created_at"], tweets["retweet_count"]))
 
+cur.execute('DROP TABLE IF EXISTS Users')
 
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+table_spec += 'Users (user_id STRING PRIMARY KEY, '
+table_spec += 'screen_name TEXT, num_favs INTEGER, description TEXT)'
+cur.execute(table_spec)
 
+statement_user = 'INSERT INTO Users VALUES (?,?,?,?)'
 
+apiumich = api.get_user("Umich")
+cur.execute(statement_user, (apiumich["id"], apiumich["screen_name"], apiumich["favourites_count"], apiumich["description"]))
 
+for tweets in umich_tweets:
+	if len(tweets["entities"]["user_mentions"]) > 0:
+		for user in tweets["entities"]["user_mentions"]:
+			dupcheck = 'SELECT * FROM Users WHERE user_id=' + str(user["id"])
+			cur.execute(dupcheck)
+			if not cur.fetchone():
+				apiuser = api.get_user(user["screen_name"])
+				cur.execute(statement_user, (user["id"], user["screen_name"], apiuser["favourites_count"], apiuser["description"]))
+
+conn.commit()
 
 
 ## Task 3 - Making queries, saving data, fetching data
@@ -173,58 +200,58 @@ class Task1(unittest.TestCase):
 	def test_umich_tweets_function(self):
 		self.assertTrue(len(umich_tweets)>=20)
 
-# class Task2(unittest.TestCase):
-# 	def test_tweets_1(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT * FROM Tweets');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result)>=20, "Testing there are at least 20 records in the Tweets database")
-# 		conn.close()
-# 	def test_tweets_2(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT * FROM Tweets');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result[1])==5,"Testing that there are 5 columns in the Tweets table")
-# 		conn.close()
-# 	def test_tweets_3(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT user_id FROM Tweets');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result[1][0])>=2,"Testing that a tweet user_id value fulfills a requirement of being a Twitter user id rather than an integer, etc")
-# 		conn.close()
-# 	def test_tweets_4(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT tweet_id FROM Tweets');
-# 		result = cur.fetchall()
-# 		self.assertTrue(result[0][0] != result[19][0], "Testing part of what's expected such that tweets are not being added over and over (tweet id is a primary key properly)...")
-# 		if len(result) > 20:
-# 			self.assertTrue(result[0][0] != result[20][0])
-# 		conn.close()
-# 	def test_users_4(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT * FROM Users');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result)>=2,"Testing that there are at least 2 distinct users in the Users table")
-# 		conn.close()
-# 	def test_users_5(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT * FROM Users');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result)<20,"Testing that there are fewer than 20 users in the users table -- effectively, that you haven't added duplicate users. If you got hundreds of tweets and are failing this, let's talk. Otherwise, careful that you are ensuring that your user id is a primary key!")
-# 		conn.close()
-# 	def test_users_6(self):
-# 		conn = sqlite3.connect('project3_tweets.db')
-# 		cur = conn.cursor()
-# 		cur.execute('SELECT * FROM Users');
-# 		result = cur.fetchall()
-# 		self.assertTrue(len(result[0])==4,"Testing that there are 4 columns in the Users database")
-# 		conn.close()
+class Task2(unittest.TestCase):
+	def test_tweets_1(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM Tweets');
+		result = cur.fetchall()
+		self.assertTrue(len(result)>=20, "Testing there are at least 20 records in the Tweets database")
+		conn.close()
+	def test_tweets_2(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM Tweets');
+		result = cur.fetchall()
+		self.assertTrue(len(result[1])==5,"Testing that there are 5 columns in the Tweets table")
+		conn.close()
+	def test_tweets_3(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT user_id FROM Tweets');
+		result = cur.fetchall()
+		self.assertTrue(len(result[1][0])>=2,"Testing that a tweet user_id value fulfills a requirement of being a Twitter user id rather than an integer, etc")
+		conn.close()
+	def test_tweets_4(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT tweet_id FROM Tweets');
+		result = cur.fetchall()
+		self.assertTrue(result[0][0] != result[19][0], "Testing part of what's expected such that tweets are not being added over and over (tweet id is a primary key properly)...")
+		if len(result) > 20:
+			self.assertTrue(result[0][0] != result[20][0])
+		conn.close()
+	def test_users_4(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM Users');
+		result = cur.fetchall()
+		self.assertTrue(len(result)>=2,"Testing that there are at least 2 distinct users in the Users table")
+		conn.close()
+	def test_users_5(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM Users');
+		result = cur.fetchall()
+		self.assertTrue(len(result)<20,"Testing that there are fewer than 20 users in the users table -- effectively, that you haven't added duplicate users. If you got hundreds of tweets and are failing this, let's talk. Otherwise, careful that you are ensuring that your user id is a primary key!")
+		conn.close()
+	def test_users_6(self):
+		conn = sqlite3.connect('project3_tweets.db')
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM Users');
+		result = cur.fetchall()
+		self.assertTrue(len(result[0])==4,"Testing that there are 4 columns in the Users database")
+		conn.close()
 
 # class Task3(unittest.TestCase):
 # 	def test_users_info(self):
